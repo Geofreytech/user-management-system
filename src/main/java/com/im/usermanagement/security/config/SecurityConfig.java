@@ -23,29 +23,28 @@ public class SecurityConfig {
     }
 
     // 2. AuthenticationManager Bean (REQUIRED by AuthController)
+    // This bean is fetched from the AuthenticationConfiguration provided by Spring Boot.
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    // *** IMPORTANT FIX: The temporary 'userDetailsService()' bean was removed. ***
-    // *** Spring now automatically uses the @Service annotated CustomUserDetailsService. ***
-
     // 3. Security Filter Chain (The main configuration)
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless REST APIs (using modern syntax)
+                .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless REST APIs
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Make the API stateless
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll() // Allow login and registration
-                        .requestMatchers("/h2-console/**").permitAll() // Allow H2 console
+                        // Allow login, registration, and H2 console access without authentication
+                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().authenticated() // Secure everything else
                 );
 
-        // Security headers configuration (for H2 console compatibility)
+        // Required to display the H2 console properly within a frame
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();

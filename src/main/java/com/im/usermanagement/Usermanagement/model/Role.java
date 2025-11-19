@@ -2,24 +2,26 @@ package com.im.usermanagement.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.security.core.GrantedAuthority;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-@Data
+/**
+ * Entity model for application roles.
+ * Uses Lombok for boilerplate code (getters, setters, constructors).
+ */
 @Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "roles")
-public class Role implements GrantedAuthority {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Use EnumType.STRING to store the enum name as a string in the database
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(length = 20, nullable = false, unique = true)
     private RoleName name;
-
-    // Used by Spring Security to identify the role string (e.g., "ROLE_USER")
-    @Override
-    public String getAuthority() {
-        return name.name();
-    }
 }
