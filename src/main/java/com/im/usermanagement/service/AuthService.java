@@ -1,6 +1,6 @@
 package com.im.usermanagement.service;
 
-import com.im.usermanagement.dto.RegisterRequest;
+import com.im.usermanagement.security.dto.RegisterRequestDTO; // <-- FINAL FIX: Changed class name to match file: RegisterRequestDTO
 import com.im.usermanagement.exception.UserAlreadyExistsException;
 import com.im.usermanagement.model.Role;
 import com.im.usermanagement.model.RoleName;
@@ -34,7 +34,7 @@ public class AuthService {
      * @return The newly created User entity.
      * @throws UserAlreadyExistsException if the email is already in use.
      */
-    public User register(RegisterRequest request) {
+    public User register(RegisterRequestDTO request) { // <-- Updated type in method signature
         log.info("Attempting to register new user: {}", request.getEmail());
 
         // 1. Check if user already exists

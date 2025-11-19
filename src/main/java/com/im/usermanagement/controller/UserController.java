@@ -1,6 +1,6 @@
 package com.im.usermanagement.controller;
 
-import com.im.usermanagement.Usermanagement.security.dto.UserResponseDTO; // For the secured /me endpoint response
+import com.im.usermanagement.security.dto.UserResponseDTO; // For the secured /me endpoint response
 import com.im.usermanagement.model.User;
 import com.im.usermanagement.service.UserService;
 import com.im.usermanagement.exception.ResourceNotFoundException;

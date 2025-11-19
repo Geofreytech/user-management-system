@@ -1,8 +1,8 @@
-package com.im.usermanagement.Usermanagement.security.config;
+package com.im.usermanagement.security.config;
 
-import com.im.usermanagement.model.Role;
-import com.im.usermanagement.model.RoleName;
-import com.im.usermanagement.repository.RoleRepository;
+import com.im.usermanagement.model.Role;               // CORRECTED: Removed redundant Usermanagement
+import com.im.usermanagement.model.RoleName;           // CORRECTED
+import com.im.usermanagement.repository.RoleRepository; // CORRECTED
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;

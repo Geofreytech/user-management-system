@@ -1,13 +1,14 @@
-package com.im.usermanagement.controller;
+package com.im.usermanagement.controller; // FIXED: Removed redundant .Usermanagement
 
-import com.im.usermanagement.model.Role;
-import com.im.usermanagement.model.RoleName;
-import com.im.usermanagement.model.User;
-import com.im.usermanagement.repository.RoleRepository;
-import com.im.usermanagement.repository.UserRepository;
-import com.im.usermanagement.Usermanagement.security.dto.AuthResponseDTO;
-import com.im.usermanagement.Usermanagement.security.dto.LoginRequestDTO;
-import com.im.usermanagement.Usermanagement.security.dto.RegisterRequestDTO;
+import com.im.usermanagement.model.Role; // FIXED
+import com.im.usermanagement.model.RoleName; // FIXED
+import com.im.usermanagement.model.User; // FIXED
+import com.im.usermanagement.repository.RoleRepository; // FIXED
+import com.im.usermanagement.repository.UserRepository; // FIXED
+import com.im.usermanagement.security.dto.AuthResponseDTO; // FIXED (Now defined below)
+import com.im.usermanagement.security.dto.LoginRequestDTO; // FIXED
+import com.im.usermanagement.security.dto.RegisterRequestDTO; // FIXED (Now defined below)
+import com.im.usermanagement.security.jwt.JwtTokenProvider;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 
 @RestController
-@RequestMapping("/api/v1/auth") // <<< FIX 1: Added 'v1' to match SecurityConfig.java
+@RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -54,7 +55,7 @@ public class AuthController {
         // 1. Authenticate credentials using the AuthenticationManager
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginDTO.getEmail(), // <<< FIX 2: Correctly use email from the DTO
+                        loginDTO.getEmail(),
                         loginDTO.getPassword()
                 )
         );

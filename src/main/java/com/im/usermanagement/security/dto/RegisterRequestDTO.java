@@ -1,10 +1,14 @@
-package com.im.usermanagement.Usermanagement.security.dto;
+package com.im.usermanagement.security.dto; // FIXED
 
-import lombok.Data;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 
+/**
+ * DTO for user registration requests.
+ * This replaces the older RegisterRequest.java name for consistency with AuthController.
+ */
 @Data
 public class RegisterRequestDTO {
 
@@ -14,11 +18,11 @@ public class RegisterRequestDTO {
     @NotBlank(message = "Last name is required")
     private String lastName;
 
+    @Email(message = "Email must be valid")
     @NotBlank(message = "Email is required")
-    @Email(message = "Must be a valid email format")
     private String email;
 
+    @Size(min = 8, message = "Password must be at least 8 characters long")
     @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 }

@@ -1,4 +1,4 @@
-package com.im.usermanagement.Usermanagement.security.jwt;
+package com.im.usermanagement.security.jwt;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

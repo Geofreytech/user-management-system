@@ -1,7 +1,7 @@
 package com.im.usermanagement.repository;
 
-import com.im.usermanagement.model.Role;
-import com.im.usermanagement.model.RoleName;
+import com.im.usermanagement.model.Role; // <-- CORRECTED: Removed the extra Usermanagement
+import com.im.usermanagement.model.RoleName; // <-- CORRECTED: Removed the extra Usermanagement
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

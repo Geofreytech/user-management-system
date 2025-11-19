@@ -1,4 +1,4 @@
-package com.im.usermanagement.Usermanagement.security.dto;
+package com.im.usermanagement.security.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.im.usermanagement.Usermanagement.security.jwt;
+package com.im.usermanagement.security.jwt;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
