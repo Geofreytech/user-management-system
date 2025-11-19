@@ -1,4 +1,4 @@
-package com.im.usermanagement.config;
+package com.im.usermanagement.Usermanagement.security.config;
 
 import com.im.usermanagement.model.Role;
 import com.im.usermanagement.model.RoleName;

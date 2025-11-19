@@ -1,4 +1,4 @@
-package com.im.usermanagement.security.dto;
+package com.im.usermanagement.Usermanagement.security.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
