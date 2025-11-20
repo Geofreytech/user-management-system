@@ -1,17 +1,28 @@
-package com.im.usermanagement.security.dto; // FIXED
+package com.im.usermanagement.security.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-/**
- * DTO for sending the JWT token back to the client after a successful login.
- */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+// This DTO is used to send the JWT token back to the client after successful login
 public class AuthResponseDTO {
-
     private String accessToken;
-    private final String tokenType = "Bearer"; // Always fixed for consistency
+    private String tokenType = "Bearer";
+
+    public AuthResponseDTO(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    // Getters and Setters
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    public String getTokenType() {
+        return tokenType;
+    }
+
+    public void setTokenType(String tokenType) {
+        this.tokenType = tokenType;
+    }
 }

@@ -1,4 +1,4 @@
-package com.im.usermanagement.security.service;
+package com.im.usermanagement.service;
 
 import com.im.usermanagement.model.User;
 import com.im.usermanagement.repository.UserRepository;

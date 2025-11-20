@@ -1,4 +1,4 @@
-package com.im.usermanagement.Usermanagement.security.config;
+package com.im.usermanagement.security.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,8 +30,12 @@ public class SecurityConfig {
 
                 // Configure request authorization
                 .authorizeHttpRequests(auth -> auth
-                        // Allow anyone to access the registration and public endpoints
+                        // Allow anyone to access the registration and login endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // If using H2 database console, you need to permit this path
+                        // This must be here to allow unauthenticated access to the console endpoint
+                        .requestMatchers("/h2-console/**").permitAll()
 
                         // Require ADMIN role for endpoints under /api/admin
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -45,7 +49,8 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // Note: Token and Authentication filter definitions go here later
+                // IMPORTANT: Fix for H2 Console to display properly in the browser (disables X-Frame-Options)
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
 
                 // Configure basic form login (will be replaced by JWT later, but good for testing)
                 .httpBasic(httpBasic -> httpBasic.init(http));
