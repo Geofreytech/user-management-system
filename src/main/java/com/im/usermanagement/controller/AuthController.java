@@ -1,13 +1,13 @@
-package com.im.usermanagement.controller; // FIXED: Removed redundant .Usermanagement
+package com.im.usermanagement.controller;
 
-import com.im.usermanagement.model.Role; // FIXED
-import com.im.usermanagement.model.RoleName; // FIXED
-import com.im.usermanagement.model.User; // FIXED
-import com.im.usermanagement.repository.RoleRepository; // FIXED
-import com.im.usermanagement.repository.UserRepository; // FIXED
-import com.im.usermanagement.security.dto.AuthResponseDTO; // FIXED (Now defined below)
-import com.im.usermanagement.security.dto.LoginRequestDTO; // FIXED
-import com.im.usermanagement.security.dto.RegisterRequestDTO; // FIXED (Now defined below)
+import com.im.usermanagement.model.Role;
+import com.im.usermanagement.model.RoleName;
+import com.im.usermanagement.model.User;
+import com.im.usermanagement.repository.RoleRepository;
+import com.im.usermanagement.repository.UserRepository;
+import com.im.usermanagement.security.dto.AuthResponseDTO;
+import com.im.usermanagement.security.dto.LoginRequestDTO;
+import com.im.usermanagement.security.dto.RegisterRequestDTO;
 import com.im.usermanagement.security.jwt.JwtTokenProvider;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 
 @RestController
+// FIX: Added "/v1" back to the request mapping to match SecurityConfig
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
@@ -45,7 +46,7 @@ public class AuthController {
     }
 
     /**
-     * Endpoint for user login.
+     * Endpoint for user login. Path: /api/v1/auth/login
      * @param loginDTO Contains email and password.
      * @return JWT Token.
      */
@@ -71,7 +72,7 @@ public class AuthController {
     }
 
     /**
-     * Endpoint for user registration.
+     * Endpoint for user registration. Path: /api/v1/auth/register
      * @param registerDTO Contains new user details.
      * @return Success message.
      */

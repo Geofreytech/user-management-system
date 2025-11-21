@@ -94,6 +94,16 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- ... inside <dependencies> tag ... -->
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.30</version> <!-- Use a recent version -->
+        </dependency>
+
+        <!-- ... rest of dependencies ... -->
+
     </dependencies>
 
     <build>
