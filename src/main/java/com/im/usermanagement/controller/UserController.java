@@ -1,20 +1,19 @@
 package com.im.usermanagement.controller;
 
-import com.im.usermanagement.security.dto.UserResponseDTO; // For the secured /me endpoint response
+import com.im.usermanagement.security.dto.UserProfileResponseDTO;
+import com.im.usermanagement.security.dto.RegisterRequestDTO; // <-- ADDED: Import the DTO used for creation
 import com.im.usermanagement.model.User;
+import com.im.usermanagement.service.AuthService; // <-- ADDED: Import AuthService
 import com.im.usermanagement.service.UserService;
 import com.im.usermanagement.exception.ResourceNotFoundException;
 
+import jakarta.validation.Valid; // Required for @Valid annotation on DTO
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize; // REQUIRED for method-level security
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * REST Controller for managing all users (CRUD) and handling the authenticated user's profile (/me).
@@ -26,57 +25,27 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserService userService;
+    private final AuthService authService; // <-- ADDED: Field for AuthService
 
     // Constructor Injection
-    public UserController(UserService userService) {
+    public UserController(UserService userService, AuthService authService) { // <-- MODIFIED: Inject AuthService
         this.userService = userService;
+        this.authService = authService; // <-- Initialize AuthService
     }
 
-    // --- Secured Endpoint: Get Current User ---
+    // --- Secured Endpoint: Get Current User's Profile ---
     /**
-     * Endpoint to retrieve the details of the currently logged-in user.
+     * Endpoint to retrieve the profile details of the currently logged-in user.
      * Accessible by any authenticated user.
      * Maps to GET /api/v1/users/me
+     * @return UserProfileResponseDTO containing non-sensitive profile data.
      */
     @GetMapping("/me")
-    public ResponseEntity<UserResponseDTO> getCurrentUser() {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // Check if the principal is a UserDetails object
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
-
-            // In our system, the principal is the actual User entity which implements UserDetails
-            // If we used the principal from the token (JwtTokenProvider) it would be a Spring UserDetails object.
-            // Since the JwtTokenProvider currently recreates a simple Spring UserDetails object
-            // instead of fetching the User entity, we'll rely on the username (email) and fetch the full User object.
-
-            String email = authentication.getName();
-
-            try {
-                // Fetch the full user details from the database
-                User user = userService.getUserByEmail(email); // Requires a new method in UserService
-
-                // Map the User entity to the response DTO
-                UserResponseDTO response = UserResponseDTO.builder()
-                        .id(user.getId())
-                        .firstName(user.getFirstName())
-                        .lastName(user.getLastName())
-                        .email(user.getEmail())
-                        // Map authorities (roles) to a list of strings
-                        .roles(user.getAuthorities().stream()
-                                .map(Object::toString)
-                                .collect(Collectors.toList()))
-                        .build();
-
-                return ResponseEntity.ok(response);
-            } catch (ResourceNotFoundException e) {
-                // This should not happen if the user is authenticated, but provides a fallback
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-        }
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<UserProfileResponseDTO> getCurrentUser() {
+        // This leverages the service method we defined, which securely pulls the
+        // authenticated user's ID from the SecurityContextHolder.
+        UserProfileResponseDTO profile = userService.getCurrentUserProfile();
+        return ResponseEntity.ok(profile);
     }
 
     // --------------------------------------------------------------------------
@@ -95,17 +64,23 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}") // Maps to GET /api/v1/users/{id}
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        // Assuming your service handles ResourceNotFoundException
         User user = userService.getUserById(id);
         return ResponseEntity.ok(user); // HTTP 200 OK
     }
 
     // --- 3. POST: Create a New User (Admin Only) ---
-    // NOTE: This should ideally use a DTO and a dedicated registration service method
-    // but for simplicity, we'll keep the User entity input.
+    /**
+     * Endpoint for creating a new user, allowing role assignment (ADMIN or USER)
+     * based on the input DTO. Requires the caller to have the ADMIN role.
+     * @param request The DTO containing the user's details and the desired 'role' field.
+     * @return The created User entity.
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping // Maps to POST /api/v1/users
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        User createdUser = userService.createUser(user);
+    public ResponseEntity<User> createUser(@Valid @RequestBody RegisterRequestDTO request) { // <-- MODIFIED to use DTO
+        // The isAdminContext=true flag tells the AuthService to check the DTO for a requested role (like "ADMIN")
+        User createdUser = authService.register(request, true); // <-- MODIFIED to use AuthService
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED); // HTTP 201 Created
     }
 
@@ -113,6 +88,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}") // Maps to PUT /api/v1/users/{id}
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+        // You might consider changing this to a DTO as well for safer updates
         User updatedUser = userService.updateUser(id, userDetails);
         return ResponseEntity.ok(updatedUser); // HTTP 200 OK
     }

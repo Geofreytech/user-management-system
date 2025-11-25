@@ -1,14 +1,11 @@
 package com.im.usermanagement.controller;
 
-import com.im.usermanagement.model.Role;
-import com.im.usermanagement.model.RoleName;
-import com.im.usermanagement.model.User;
-import com.im.usermanagement.repository.RoleRepository;
-import com.im.usermanagement.repository.UserRepository;
+import com.im.usermanagement.service.AuthService; // <-- NEW: Import AuthService
 import com.im.usermanagement.security.dto.AuthResponseDTO;
 import com.im.usermanagement.security.dto.LoginRequestDTO;
 import com.im.usermanagement.security.dto.RegisterRequestDTO;
 import com.im.usermanagement.security.jwt.JwtTokenProvider;
+
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,33 +13,25 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
+// NOTE: Removed unused imports like Role, UserRepository, PasswordEncoder, etc.
 
 @RestController
-// FIX: Added "/v1" back to the request mapping to match SecurityConfig
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final AuthService authService; // <-- ADDED: Dependency for AuthService
 
     // Inject all required dependencies
     public AuthController(AuthenticationManager authenticationManager,
-                          UserRepository userRepository,
-                          RoleRepository roleRepository,
-                          PasswordEncoder passwordEncoder,
-                          JwtTokenProvider tokenProvider) {
+                          JwtTokenProvider tokenProvider, // <-- Retained
+                          AuthService authService) { // <-- ADDED: Inject AuthService
         this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
+        this.authService = authService; // <-- INITIALIZED
     }
 
     /**
@@ -73,35 +62,19 @@ public class AuthController {
 
     /**
      * Endpoint for user registration. Path: /api/v1/auth/register
+     * This method delegates all registration logic (validation, hashing, role assignment) to AuthService.
      * @param registerDTO Contains new user details.
      * @return Success message.
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequestDTO registerDTO) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterRequestDTO registerDTO) {
 
-        // Check 1: Ensure email is not already in use
-        if (userRepository.findByEmail(registerDTO.getEmail()).isPresent()) {
-            return new ResponseEntity<>("Email is already taken!", HttpStatus.BAD_REQUEST);
-        }
+        // Delegate all registration logic (user existence check, password hashing,
+        // role assignment, and saving) to the AuthService.
+        // The service will throw an exception (like UserAlreadyExistsException) if validation fails.
+        authService.register(registerDTO);
 
-        // 2. Create the User object
-        User user = new User();
-        user.setFirstName(registerDTO.getFirstName());
-        user.setLastName(registerDTO.getLastName());
-        user.setEmail(registerDTO.getEmail());
-
-        // HASH the password before saving!
-        user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
-
-        // 3. Assign the default role (ROLE_USER)
-        Role roles = roleRepository.findByName(RoleName.ROLE_USER)
-                .orElseThrow(() -> new RuntimeException("Error: Role not found. Please initialize roles in DB."));
-
-        user.setRoles(Collections.singletonList(roles));
-
-        // 4. Save the new user
-        userRepository.save(user);
-
+        // If the service call succeeds without throwing an exception, return 201 Created.
         return new ResponseEntity<>("User registered successfully!", HttpStatus.CREATED);
     }
 }

@@ -21,6 +21,15 @@ public class RegisterRequestDTO {
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
 
+    // --- NEW FIELD ---
+    /**
+     * Optional role field. Used when an ADMIN creates a new user via the /api/v1/users endpoint.
+     * This field is typically ignored for the public /api/v1/auth/register endpoint,
+     * but must be present for the DTO to handle all possible registration scenarios.
+     */
+    private String role;
+    // --- END NEW FIELD ---
+
     // Default constructor
     public RegisterRequestDTO() {}
 
@@ -56,4 +65,14 @@ public class RegisterRequestDTO {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    // --- NEW GETTER AND SETTER FOR 'role' ---
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+    // --- END NEW GETTER AND SETTER ---
 }

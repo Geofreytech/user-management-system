@@ -11,75 +11,109 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * Custom filter that executes once per request to check for a valid JWT in the Authorization header.
- * If a valid token is found, it loads the user and sets the authentication context for the request.
+ * Custom filter that executes once per request to validate JWTs.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    // Inject our utility classes
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
 
     /**
-     * Extracts the JWT from the Authorization header (format: "Bearer <token>").
+     * List of paths that should bypass this JWT filter entirely.
+     * These paths MUST match the .permitAll() paths in SecurityConfig.
      */
-    private String getJwtFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
+    private static final List<RequestMatcher> PUBLIC_PATHS = Arrays.asList(
+            // General common root requests
+            new AntPathRequestMatcher("/"),             // Root path
+            new AntPathRequestMatcher("/favicon.ico"),  // Browser icon request
 
-        // Check if the token is present and starts with "Bearer "
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7); // Return the token part after "Bearer "
-        }
-        return null;
+            // Auth endpoints
+            new AntPathRequestMatcher("/api/v1/auth/**"),
+
+            // Swagger/OpenAPI documentation
+            new AntPathRequestMatcher("/v3/api-docs/**"),
+            new AntPathRequestMatcher("/swagger-ui/**"),
+            new AntPathRequestMatcher("/webjars/**"),
+            new AntPathRequestMatcher("/swagger-ui.html"),
+
+            // H2 Console
+            new AntPathRequestMatcher("/h2-console/**")
+    );
+
+
+    /**
+     * Overrides the default method to implement conditional filtering.
+     * Returns true if the filter should NOT run (i.e., for public paths).
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Check if the current request URI matches any of the defined public paths
+        return PUBLIC_PATHS.stream().anyMatch(matcher -> matcher.matches(request));
     }
 
+
+    /**
+     * Main filter logic for authenticated requests.
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+
         try {
-            // 1. Get the JWT from the request
             String jwt = getJwtFromRequest(request);
 
-            // 2. Validate the token and authenticate the user
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
 
-                // Get username from token
+                // Get the username (email) from the token, as defined in JwtTokenProvider
                 String username = tokenProvider.getUsernameFromJWT(jwt);
 
-                // Load user data associated with the token (e.g., roles/authorities)
+                // Load user details by username (not ID)
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
-                // Construct Authentication token required by Spring Security
+                // Create authentication object
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null, // credentials field is null for token-based auth
-                        userDetails.getAuthorities()
-                );
+                        userDetails, null, userDetails.getAuthorities());
 
-                // Set additional details like the request IP address
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // Set the Authentication object in the SecurityContext, completing the authentication process
+                // Set authentication in the SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception ex) {
-            // In a real application, you might want more specific handling here,
-            // but for now, we just log and let the request proceed.
-            log.error("Could not set user authentication in security context", ex);
+            // Log the exception but do not halt the chain here,
+            // the JwtAuthEntryPoint will handle the ultimate rejection if no auth is set.
+            log.warn("Authentication failed for request to protected resource: {}", ex.getMessage());
         }
 
-        // 3. Pass the request to the next filter in the chain (or the final endpoint)
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Extracts the JWT token from the Authorization header of the request.
+     */
+    private String getJwtFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+
+        // Check if the header exists and starts with "Bearer "
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            // Return the token part (everything after "Bearer ")
+            return bearerToken.substring(7);
+        }
+        return null;
     }
 }

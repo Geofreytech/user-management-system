@@ -4,6 +4,7 @@ import com.im.usermanagement.security.jwt.JwtAuthEntryPoint;
 import com.im.usermanagement.security.jwt.JwtAuthenticationFilter;
 import com.im.usermanagement.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,6 +18,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 /**
  * Main Spring Security Configuration Class.
@@ -42,6 +45,7 @@ public class SecurityConfig {
 
     /**
      * Defines the AuthenticationManager bean, which is required for the login process.
+     * This bean is necessary to resolve the "AuthenticationManager bean could not be found" error.
      */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
@@ -61,10 +65,23 @@ public class SecurityConfig {
     }
 
     /**
-     * Configures the main Security Filter Chain.
+     * Creates a bean for MvcRequestMatcher.Builder, often necessary for using
+     * requestMatchers in a Spring MVC context to correctly handle path variables.
+     * @param introspector The HandlerMappingIntrospector used by Spring MVC.
+     * @return A builder for creating MvcRequestMatchers.
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {
+        return new MvcRequestMatcher.Builder(introspector);
+    }
+
+    /**
+     * Configures the main Security Filter Chain.
+     * @param http The HttpSecurity object to configure.
+     * @param mvc The MvcRequestMatcher.Builder for advanced request matching.
+     */
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
                 // 1. Disable CSRF (Stateless API doesn't need it)
                 .csrf(csrf -> csrf.disable())
@@ -79,16 +96,25 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 4. Configure Authorization Rules
+                // 4. Configure Authorization Rules (RBAC)
                 .authorizeHttpRequests(authorize -> authorize
-                        // FIX: Added /api/v1/auth/** to permit access to the controller
+                        // Allow access to common static resources (CSS, JS, images, etc.)
+                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+
+                        // Public Endpoints (Permit All)
                         .requestMatchers(
-                                "/api/v1/auth/**",      // Permit all v1 auth endpoints (register/login)
-                                "/h2-console/**",       // Permit H2 console
-                                "/v3/api-docs/**",      // Permit Swagger UI documentation
-                                "/swagger-ui/**",
-                                "/webjars/**"
+                                mvc.pattern("/api/v1/auth/**"),      // Permit all v1 auth endpoints (register/login)
+                                mvc.pattern("/h2-console/**"),       // Permit H2 console
+                                mvc.pattern("/v3/api-docs/**"),      // Permit Swagger UI documentation
+                                mvc.pattern("/swagger-ui/**"),
+                                mvc.pattern("/webjars/**")
                         ).permitAll()
+
+                        // RBAC: Rule 1 - Allow any authenticated user to access their own profile
+                        .requestMatchers(mvc.pattern("/api/v1/users/me")).authenticated()
+
+                        // RBAC: Rule 2 - Restrict all other user management paths to ADMIN role
+                        .requestMatchers(mvc.pattern("/api/v1/users/**")).hasRole("ADMIN")
 
                         // All other requests must be authenticated
                         .anyRequest().authenticated()

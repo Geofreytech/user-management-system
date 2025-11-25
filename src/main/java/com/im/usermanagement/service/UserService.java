@@ -3,20 +3,24 @@ package com.im.usermanagement.service;
 import com.im.usermanagement.exception.ResourceNotFoundException;
 import com.im.usermanagement.exception.UserAlreadyExistsException;
 import com.im.usermanagement.model.User;
+import com.im.usermanagement.model.Role;
 import com.im.usermanagement.repository.UserRepository;
-import lombok.RequiredArgsConstructor; // ADDED
-import lombok.extern.slf4j.Slf4j; // ADDED
+import com.im.usermanagement.security.dto.UserProfileResponseDTO;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.Optional;
 import java.util.List;
 
 /**
  * Service layer responsible for business logic related to User CRUD operations.
  */
 @Service
-@RequiredArgsConstructor // Automatically injects UserRepository via constructor
-@Slf4j // Provides logger 'log'
+@RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -108,4 +112,43 @@ public class UserService {
         userRepository.save(user); // Persist the change
         log.info("Soft deleted user with ID: {}", id);
     }
+
+    /**
+     * Retrieves the profile details for the currently authenticated user.
+     * @return UserProfileResponseDTO containing non-sensitive user data.
+     * @throws RuntimeException if the user is not found in the database.
+     */
+    public UserProfileResponseDTO getCurrentUserProfile() {
+        // 1. Get the authenticated principal (the user details object)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // The principal is typically the email or username passed into the JWT payload (the 'sub' claim)
+        String userIdentifier = authentication.getName();
+
+        // 2. Find the user in the database
+        // Assuming your repository has a method to find by the principal's name (which is often the email)
+        Optional<User> userOptional = userRepository.findByEmail(userIdentifier);
+
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("Authenticated user not found in database: " + userIdentifier);
+        }
+
+        User user = userOptional.get();
+
+        // 3. Convert the User entity to the safe DTO (Projection)
+        return UserProfileResponseDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername()) // Include if you use a separate username field
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                // FIX: Added .name() call to convert the RoleName enum (which is the result of getName()) to a String.
+                .role(user.getRoles().stream()
+                        .findFirst()
+                        .map(Role::getName)
+                        .map(Enum::name) // <-- THE FINAL FIX: Convert the RoleName enum to its String representation
+                        .orElse(null))
+                .build();
+    }
+
 }
