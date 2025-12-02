@@ -1,11 +1,10 @@
 package com.im.usermanagement.security.dto;
 
-import lombok.Data;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-@Data
+// This DTO is used to receive new user data during registration
 public class RegisterRequestDTO {
 
     @NotBlank(message = "First name is required")
@@ -19,6 +18,61 @@ public class RegisterRequestDTO {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
+
+    // --- NEW FIELD ---
+    /**
+     * Optional role field. Used when an ADMIN creates a new user via the /api/v1/users endpoint.
+     * This field is typically ignored for the public /api/v1/auth/register endpoint,
+     * but must be present for the DTO to handle all possible registration scenarios.
+     */
+    private String role;
+    // --- END NEW FIELD ---
+
+    // Default constructor
+    public RegisterRequestDTO() {}
+
+    // Getters and Setters
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    // --- NEW GETTER AND SETTER FOR 'role' ---
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+    // --- END NEW GETTER AND SETTER ---
 }
